@@ -75,12 +75,23 @@ jobs:
         run: echo ${{ steps.meta.outputs.digest }}
 
       - name: Trigger Rancher redeploy via kubectl
-        if: vars.RANCHER_URL != '' && vars.RANCHER_TOKEN != ''
+        env:
+          RANCHER_URL: ${{ vars.RANCHER_URL }}
+          RANCHER_TOKEN: ${{ vars.RANCHER_TOKEN }}
         run: |
+          # Check if variables are set
+          if [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_TOKEN" ]; then
+            echo "⚠️ RANCHER_URL or RANCHER_TOKEN not set. Skipping Rancher deployment."
+            echo "📝 Add these variables in GitHub: Settings → Secrets and variables → Actions → Variables"
+            exit 0
+          fi
+          
+          echo "🚀 Triggering Rancher redeploy..."
+          
           # Trigger rollout restart for the deployment
-          curl -X PATCH \
-            "${{ vars.RANCHER_URL }}/k8s/clusters/c-mxrxn/v1/namespaces/solar-v2/apps/deployments/auth" \
-            -H "Authorization: Bearer ${{ vars.RANCHER_TOKEN }}" \
+          RESPONSE=$(curl -w "\n%{http_code}" -X PATCH \
+            "$RANCHER_URL/k8s/clusters/c-mxrxn/v1/namespaces/solar-v2/apps/deployments/auth" \
+            -H "Authorization: Bearer $RANCHER_TOKEN" \
             -H "Content-Type: application/strategic-merge-patch+json" \
             -d '{
               "spec": {
@@ -92,6 +103,19 @@ jobs:
                   }
                 }
               }
-            }'
-          echo "✅ Triggered Rancher redeploy for auth deployment"
+            }')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "📄 Response: $BODY"
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Successfully triggered Rancher redeploy for auth deployment"
+          else
+            echo "❌ Failed to trigger Rancher redeploy. Status: $HTTP_CODE"
+            echo "🔍 Check: 1) RANCHER_TOKEN is valid 2) Token has permissions 3) Rancher URL is correct"
+            exit 1
+          fi
         continue-on-error: true
