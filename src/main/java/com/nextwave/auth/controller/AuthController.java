@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     @GetMapping("/")
     public String hello() {
-        return "Hello auth service! Tui là Duc handsome - Auto deploy working!";
+        return "Hello auth service! Tui là Duc handsome 1111";
     }
 }
