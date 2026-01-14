@@ -73,3 +73,25 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
+
+      - name: Trigger Rancher redeploy via kubectl
+        if: vars.RANCHER_URL != '' && vars.RANCHER_TOKEN != ''
+        run: |
+          # Trigger rollout restart for the deployment
+          curl -X PATCH \
+            "${{ vars.RANCHER_URL }}/k8s/clusters/c-mxrxn/v1/namespaces/solar-v2/apps/deployments/auth" \
+            -H "Authorization: Bearer ${{ vars.RANCHER_TOKEN }}" \
+            -H "Content-Type: application/strategic-merge-patch+json" \
+            -d '{
+              "spec": {
+                "template": {
+                  "metadata": {
+                    "annotations": {
+                      "kubectl.kubernetes.io/restartedAt": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+                    }
+                  }
+                }
+              }
+            }'
+          echo "✅ Triggered Rancher redeploy for auth deployment"
+        continue-on-error: true
