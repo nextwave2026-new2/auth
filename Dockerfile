@@ -1,4 +1,18 @@
-# Runtime image for Spring Boot application
+# Multi-stage build for Spring Boot application
+# Stage 1: Build with Maven
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+
+WORKDIR /app
+
+# Copy pom.xml first for better layer caching
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code and build
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Stage 2: Runtime image
 FROM eclipse-temurin:21-jre-alpine
 
 # Add non-root user for security
@@ -6,8 +20,8 @@ RUN addgroup -S spring && adduser -S spring -G spring
 
 WORKDIR /app
 
-# Copy pre-built JAR file from target directory
-COPY target/*.jar app.jar
+# Copy JAR from build stage
+COPY --from=build /app/target/*.jar app.jar
 
 # Change ownership
 RUN chown -R spring:spring /app
