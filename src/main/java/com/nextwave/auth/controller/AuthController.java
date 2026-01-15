@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     @GetMapping("/")
     public String hello() {
-        return "Hello auth service! tuyệt vời quá ";
+        return "Hello auth service! anh anha anh  ";
     }
 }
