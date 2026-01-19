@@ -2,7 +2,7 @@ name: Java CI/CD with Maven, Docker & GitOps
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]  # Chạy cho tất cả branches (workaround vì pull_request không hoạt động)
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ "main" ]
