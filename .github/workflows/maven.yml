@@ -84,3 +84,4 @@ jobs:
           git add .
           git commit -m "deploy(auth): sha-${{ github.sha }}"
           git push origin ${{ env.GITOPS_BRANCH }}
+
